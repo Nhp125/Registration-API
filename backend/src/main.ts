@@ -9,7 +9,7 @@ async function bootstrap() {
   const config = app.get(ConfigService);
 
   app.enableCors({
-    origin: config.get<string>("CLIENT_ORIGIN") || "http://localhost:5173",
+    origin: process.env.CLIENT_ORIGIN,
   });
 
   app.useGlobalPipes(
