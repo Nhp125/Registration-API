@@ -1,82 +1,73 @@
 import React, { useState } from "react";
 import { useForm } from "react-hook-form";
+import FormWrapper from "../components/FormWrapper";
+import Input from "../components/Input";
+import Button from "../components/Button";
+import { loginUser } from "../api/auth";
 
 export default function Login() {
   const {
     register,
     handleSubmit,
     formState: { errors },
+    setError,
   } = useForm();
   const [message, setMessage] = useState(null);
 
-  const onSubmit = (data) => {
-    // Simulate login success
+  const onSubmit = async (data) => {
     setMessage(null);
-    setTimeout(
-      () => setMessage({ type: "success", text: "Login simulated — welcome!" }),
-      700
-    );
+    try {
+      const res = await loginUser(data);
+      setMessage({
+        type: "success",
+        text: res?.message || "Đăng nhập thành công",
+      });
+    } catch (err) {
+      const msg = err?.message || "Đăng nhập thất bại";
+      // attach credential errors to password field if related
+      if (/mật khẩu|password|credentials|email/i.test(msg)) {
+        setError("password", { type: "server", message: msg });
+      } else if (/email/i.test(msg)) {
+        setError("email", { type: "server", message: msg });
+      } else {
+        setMessage({ type: "error", text: msg });
+      }
+    }
   };
 
   return (
-    <div className="mx-auto max-w-md">
-      <div className="card p-6">
-        <h2 className="text-2xl font-semibold mb-4">Welcome back</h2>
+    <FormWrapper>
+      <h2 className="text-2xl font-semibold mb-4">Welcome back</h2>
 
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700">
-              Email
-            </label>
-            <input
-              {...register("email", { required: "Email required" })}
-              className="form-input mt-1"
-              placeholder="you@example.com"
-            />
-            {errors.email && (
-              <p className="text-red-600 text-sm mt-1">
-                {errors.email.message}
-              </p>
-            )}
-          </div>
+      <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+        <Input
+          label="Email"
+          placeholder="you@example.com"
+          {...register("email", { required: "Email required" })}
+          error={errors.email?.message}
+        />
+        <Input
+          label="Password"
+          type="password"
+          placeholder="Your password"
+          {...register("password", { required: "Password required" })}
+          error={errors.password?.message}
+        />
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700">
-              Password
-            </label>
-            <input
-              type="password"
-              {...register("password", { required: "Password required" })}
-              className="form-input mt-1"
-              placeholder="Your password"
-            />
-            {errors.password && (
-              <p className="text-red-600 text-sm mt-1">
-                {errors.password.message}
-              </p>
-            )}
-          </div>
+        <div>
+          <Button type="submit">Login</Button>
+        </div>
 
-          <div>
-            <button
-              type="submit"
-              className="w-full bg-white text-indigo-700 py-2 rounded-lg font-semibold"
-            >
-              Login
-            </button>
-          </div>
-
-          {message && (
-            <p
-              className={`text-sm mt-2 ${
-                message.type === "success" ? "text-green-600" : "text-red-600"
-              }`}
-            >
-              {message.text}
-            </p>
-          )}
-        </form>
-      </div>
-    </div>
+        {message && (
+          <p
+            className={`text-sm mt-2 ${
+              message.type === "success" ? "text-green-600" : "text-red-600"
+            }`}
+          >
+            {message.text}
+          </p>
+        )}
+      </form>
+    </FormWrapper>
   );
 }
